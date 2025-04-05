@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import db from '@/lib/db';
+import { db } from '@/lib/db';
 import { withAuth } from '@/lib/authMiddleware';
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {

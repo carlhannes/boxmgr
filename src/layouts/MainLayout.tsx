@@ -47,6 +47,9 @@ const MainLayout: React.FC<MainLayoutProps> = ({
             <Link href="/print" className={`px-3 py-2 text-sm font-medium ${isActive('/print')}`}>
               Print
             </Link>
+            <Link href="/settings" className={`px-3 py-2 text-sm font-medium ${isActive('/settings')}`}>
+              Settings
+            </Link>
           </nav>
         </div>
       </header>

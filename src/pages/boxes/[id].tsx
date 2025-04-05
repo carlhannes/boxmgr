@@ -130,6 +130,13 @@ export default function BoxDetail() {
       console.error('Error deleting item:', err);
     }
   };
+  
+  // Navigate to the scan box page
+  const navigateToScanBox = () => {
+    if (id && !Array.isArray(id)) {
+      router.push(`/boxes/scan/${id}`);
+    }
+  };
 
   // Show loading state while checking authentication or loading data
   if (isAuthenticated === null || loading) {
@@ -165,12 +172,25 @@ export default function BoxDetail() {
             <div className="p-4">
               <div className="flex justify-between items-center mb-2">
                 <h1 className="text-2xl font-bold">Box #{box.number}: {box.name}</h1>
-                <Link
-                  href={`/boxes/edit/${box.id}`}
-                  className="text-blue-600 hover:text-blue-800"
-                >
-                  Edit
-                </Link>
+                <div className="flex space-x-4">
+                  <button 
+                    onClick={navigateToScanBox}
+                    className="bg-purple-600 text-white px-3 py-1 rounded hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  >
+                    <div className="flex items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M4 5a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V7a2 2 0 00-2-2h-1.586a1 1 0 01-.707-.293l-1.121-1.121A2 2 0 0011.172 3H8.828a2 2 0 00-1.414.586L6.293 4.707A1 1 0 015.586 5H4zm6 9a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
+                      </svg>
+                      Scan Box
+                    </div>
+                  </button>
+                  <Link
+                    href={`/boxes/edit/${box.id}`}
+                    className="text-blue-600 hover:text-blue-800"
+                  >
+                    Edit
+                  </Link>
+                </div>
               </div>
               <p className="text-gray-700 mb-1">
                 {box.categoryName}
@@ -228,7 +248,7 @@ export default function BoxDetail() {
             ) : (
               <div className="text-center py-8 bg-white shadow rounded-lg">
                 <p className="text-gray-600">No items in this box yet</p>
-                <p className="text-gray-500 text-sm mt-2">Add items using the form above</p>
+                <p className="text-gray-500 text-sm mt-2">Add items using the form above or scan your box with the camera</p>
               </div>
             )}
           </div>

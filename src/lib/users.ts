@@ -1,4 +1,4 @@
-import db from './db';
+import { db } from './db';
 
 // Default users to initialize if none exist
 const defaultUsers = [
