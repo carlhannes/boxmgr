@@ -14,16 +14,21 @@ Key features include:
 - **Search Functionality**: Quickly find which box contains a specific item
 - **Printable Overviews**: Generate a complete inventory to reference offline
 - **Mobile-First Design**: Optimized for phone usage during packing/unpacking
+- **AI-Powered Scanning**: Use your camera to scan box contents and automatically identify items
+- **Language Support**: Configure the language the AI uses when scanning boxes
 
 ## Architecture
 
 ### Stack Overview
 
-- **Frontend**: React 19 with Next.js 15
+The actual versions in use according to package.json:
+
+- **Frontend**: React 19 with Next.js 15.2.4
 - **Backend**: Next.js API Routes
-- **Database**: SQLite via better-sqlite3
+- **Database**: SQLite via better-sqlite3 11.9.1
 - **Styling**: Tailwind CSS 4
 - **Authentication**: Simple username/password authentication
+- **AI Integration**: Claude AI via Anthropic API for box scanning
 
 ### Directory Structure
 
@@ -43,13 +48,17 @@ boxmgr/
 │   │   ├── api/            # Backend API endpoints
 │   │   │   ├── auth/       # Authentication endpoints
 │   │   │   ├── boxes/      # Box management endpoints
+│   │   │   │   └── [id]/   # Box-specific endpoints
+│   │   │   │       └── scan.ts # AI-powered box scanning
 │   │   │   ├── categories/ # Category management endpoints
 │   │   │   ├── items/      # Item management endpoints
+│   │   │   ├── settings/   # User settings endpoints 
 │   │   │   └── search.ts   # Search functionality
 │   │   ├── boxes/          # Box-related pages
+│   │   │   └── scan/       # Box scanning interface
 │   │   ├── categories/     # Category-related pages
-│   │   ├── print/          # Printable overview
-│   │   └── search/         # Search interface
+│   │   ├── settings/       # User settings page
+│   │   └── print/          # Printable overview
 │   └── styles/             # Global styles
 └── public/                 # Static assets
 ```
@@ -79,6 +88,12 @@ The application uses a simple relational database with the following tables:
    - id (INTEGER, primary key)
    - name (TEXT) - Item description
    - boxId (INTEGER) - Foreign key to boxes
+
+5. **settings**: User preferences and API keys
+   - key (TEXT, primary key) - Setting name
+   - value (TEXT) - Setting value
+   - description (TEXT) - Optional description
+   - updated_at (TIMESTAMP) - Last update time
 
 ### Authentication Flow
 
@@ -166,12 +181,13 @@ Below is a list of planned features and their current status:
 | Simple Authentication | ✅ Completed | Basic username/password login |
 | Printable Overview | ✅ Completed | Generate a printable document of all boxes and items |
 | Box Number Assignment | ✅ Completed | Easily assign and track box numbers |
+| AI Box Scanning | ✅ Completed | Use your camera to automatically identify box contents |
+| Language Settings | ✅ Completed | Configure AI to respond in your preferred language |
+| Camera Fallbacks | ✅ Completed | Alternative methods for uploading images when camera access is limited |
 | User Account Management | 🔄 Planned | Allow users to change passwords and add new accounts |
 | Multi-User Access | 🔄 Planned | Different permission levels for different users |
-| Image Support | 🔄 Planned | Allow adding photos of box contents |
 | QR Code Generation | 🔄 Planned | Generate printable QR codes to stick on boxes |
-| Barcode Scanner | 🔄 Planned | Scan box barcodes with phone camera |
-| Move Management | 🔄 Planned | Support for tracking multiple moves |
+| QR Code Scanner | 🔄 Planned | Scan QR codes on boxes to view their  contents |
 
 ## Contributing
 
