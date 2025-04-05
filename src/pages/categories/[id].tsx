@@ -90,7 +90,7 @@ export default function CategoryDetail() {
   }
 
   return (
-    <MainLayout title={category ? `${category.name} Category` : 'Category'}>
+    <MainLayout title={category ? category.name : 'Category'}>
       {error && (
         <div className="bg-red-50 text-red-600 p-3 rounded mb-4">
           {error}

@@ -173,7 +173,7 @@ export default function BoxDetail() {
                 </Link>
               </div>
               <p className="text-gray-700 mb-1">
-                <span className="font-medium">Category:</span> {box.categoryName}
+                {box.categoryName}
               </p>
               {box.notes && (
                 <p className="text-gray-700 mt-2">
