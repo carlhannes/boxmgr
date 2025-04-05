@@ -2,6 +2,10 @@
 
 A simple but powerful system for managing your moving boxes and their contents. Keep track of what items are in which boxes, organized by categories, to make unpacking easier and more efficient.
 
+## Screenshot
+<img width="980" alt="image" src="https://github.com/user-attachments/assets/83e86bd1-0057-4aef-af45-cb6ad5cc9852" />
+
+
 ## Introduction
 
 The Box Management System was developed to address the common problem of losing track of items during a move. When you have dozens of boxes, it's easy to forget which items are stored where. This application provides a mobile-friendly interface to catalog boxes by category, assign box numbers, and list the contents of each box. When you need to find a specific item, the search functionality lets you locate it quickly.
