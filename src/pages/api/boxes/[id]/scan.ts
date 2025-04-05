@@ -7,24 +7,40 @@ interface ScanRequestBody {
   image: string;
 }
 
+interface BoxDetails {
+  id: number;
+  name: string;
+  number?: number;
+  categoryId?: number;
+  categoryName?: string;
+}
+
+interface Item {
+  id: number;
+  name: string;
+}
+
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    // Fix: Using id from query params instead of boxId
     const { id } = req.query;
     
     if (!id || Array.isArray(id)) {
       return res.status(400).json({ error: 'Invalid box ID' });
     }
 
-    // Validate box exists
-    const boxExists = db.prepare('SELECT id FROM boxes WHERE id = ?').get(id);
-    if (!boxExists) {
+    // Get box details including category
+    const boxDetails = getBoxDetails(id);
+    
+    if (!boxDetails) {
       return res.status(404).json({ error: 'Box not found' });
     }
+
+    // Get existing items in the box
+    const existingItems = getBoxItems(id);
 
     // Get request body and validate image
     const { image } = req.body as ScanRequestBody;
@@ -47,15 +63,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
     const apiKey = apiKeySetting.value;
 
-    // Process image with Claude
-    const items = await processImageWithClaude(image, apiKey);
+    // Process image with Claude, providing box context and existing items
+    const items = await processImageWithClaude(image, apiKey, boxDetails, existingItems);
     
     if (!items || items.length === 0) {
-      return res.status(400).json({ error: 'No items detected in the image' });
+      return res.status(400).json({ error: 'No new items detected in the image' });
     }
 
     // Add items to the database
-    // Fix: Pass the id variable to addItemsToBox
     const addedItems = addItemsToBox(id, items);
 
     return res.status(200).json({ 
@@ -69,7 +84,50 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   }
 }
 
-async function processImageWithClaude(imageDataUrl: string, apiKey: string): Promise<string[]> {
+// Get box details including its category
+function getBoxDetails(boxId: string): BoxDetails | null {
+  try {
+    // Join with categories to get category name
+    const box = db.prepare(`
+      SELECT 
+        b.id, 
+        b.name, 
+        b.number,
+        b.categoryId,
+        c.name as categoryName
+      FROM boxes b
+      LEFT JOIN categories c ON b.categoryId = c.id
+      WHERE b.id = ?
+    `).get(boxId) as BoxDetails | undefined;
+    
+    return box || null;
+  } catch (error) {
+    console.error('Error getting box details:', error);
+    return null;
+  }
+}
+
+// Get all existing items in a box
+function getBoxItems(boxId: string): Item[] {
+  try {
+    return db.prepare(`
+      SELECT i.id, i.name
+      FROM items i
+      JOIN box_items bi ON i.id = bi.item_id
+      WHERE bi.box_id = ?
+    `).all(boxId) as Item[];
+  } catch (error) {
+    console.error('Error getting box items:', error);
+    return [];
+  }
+}
+
+async function processImageWithClaude(
+  imageDataUrl: string, 
+  apiKey: string, 
+  boxDetails: BoxDetails,
+  existingItems: Item[]
+): Promise<string[]> {
   try {
     // Extract base64 data from data URL
     const base64Data = imageDataUrl.split(',')[1];
@@ -78,12 +136,23 @@ async function processImageWithClaude(imageDataUrl: string, apiKey: string): Pro
       throw new Error('Invalid image data');
     }
 
+    // Prepare context about the box and its contents
+    const boxName = boxDetails.name || 'Unknown';
+    const boxNumber = boxDetails.number ? `#${boxDetails.number}` : '';
+    const category = boxDetails.categoryName || 'Uncategorized';
+    
+    // Create a list of existing items
+    const existingItemsList = existingItems.map(item => item.name).join('\n- ');
+    const existingItemsContext = existingItems.length > 0 
+      ? `\nThis box already contains the following items:\n- ${existingItemsList}`
+      : '\nThis box is currently empty.';
+    
     // Initialize Anthropic client
     const anthropic = new Anthropic({
       apiKey
     });
 
-    // Create message with image
+    // Create message with image and enhanced context
     const message = await anthropic.messages.create({
       model: "claude-3-haiku-20240307",
       max_tokens: 1000,
@@ -101,7 +170,22 @@ async function processImageWithClaude(imageDataUrl: string, apiKey: string): Pro
             },
             {
               type: "text",
-              text: "Identify items in this image that would be packed in a moving box. Only include actual physical items. Format your response as a plain list with each item on a new line starting with an asterisk (*). Don't include any other text, explanations or comments. Just the list of items."
+              text: `I'm looking at the contents for Box ${boxNumber} "${boxName}" in the category "${category}".${existingItemsContext}
+
+Please identify items visible in this image that would be relevant to pack in this box, considering its category.
+
+Important instructions:
+1. DO NOT include items that are already in the box list above
+2. Only include physical items visible in the image
+3. If the existing items are in a specific language (not English), use that SAME language for new items
+4. Format your response as a plain list with each item on a new line starting with an asterisk (*)
+5. Don't include any other text, explanations or comments - ONLY the list of new items
+6. If no new items are detected or all visible items are already in the list, just respond with "* No new items detected"
+
+Example response format:
+* Item 1
+* Item 2
+* Item 3`
             }
           ]
         }
@@ -113,7 +197,10 @@ async function processImageWithClaude(imageDataUrl: string, apiKey: string): Pro
     const responseText = contentBlock.type === 'text' ? contentBlock.text : '';
 
     // Parse the items from the list format
-    return parseItemsList(responseText);
+    const parsedItems = parseItemsList(responseText);
+    
+    // Filter out "No new items detected" responses
+    return parsedItems.filter(item => item.toLowerCase() !== 'no new items detected');
   } catch (error) {
     console.error('Error calling Anthropic API:', error);
     throw new Error('Failed to analyze image with Claude');

@@ -31,6 +31,18 @@ export default function ScanBox() {
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
   const [deviceId, setDeviceId] = useState<string>('');
   const webcamRef = useRef<Webcam>(null);
+  
+  // Detect iOS device
+  const [isIOS, setIsIOS] = useState(false);
+
+  // Check if device is iOS - needed for special camera handling
+  useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera || '';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const isIOSDevice = /iPad|iPhone|iPod/.test(userAgent) && !(window as any).MSStream;
+    setIsIOS(isIOSDevice);
+  }, []);
 
   // Check media devices and update devices list
   const handleDevices = useCallback((mediaDevices: MediaDeviceInfo[]) => {
@@ -43,15 +55,49 @@ export default function ScanBox() {
     }
   }, [deviceId]);
 
-  // Get camera devices on component mount
+  // Get camera devices on component mount with enhanced error handling
   useEffect(() => {
-    navigator.mediaDevices.enumerateDevices()
-      .then(devices => handleDevices(devices))
+    // Check if mediaDevices API is available
+    if (!navigator.mediaDevices) {
+      console.log("mediaDevices API not available");
+      // On iOS, we'll just assume there's a camera and use it directly
+      if (isIOS) {
+        // For iOS, we can't enumerate devices but can still use the camera
+        setDeviceId('environment'); // Special value for iOS
+      } else {
+        setError("Your browser doesn't support camera access. Please try a different browser.");
+      }
+      return;
+    }
+    
+    try {
+    // First request camera permission, which may be needed before enumeration works on some browsers
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(() => {
+        // After permission is granted, try to enumerate devices if the method exists
+        if (typeof navigator.mediaDevices.enumerateDevices === 'function') {
+          navigator.mediaDevices.enumerateDevices()
+            .then(devices => handleDevices(devices))
+            .catch(err => {
+              console.error("Error enumerating devices:", err);
+              // If enumeration fails but we already have camera permission, we can still use default camera
+              setDeviceId('environment');
+            });
+        } else {
+          console.log("enumerateDevices not supported by this browser");
+          // Use default camera
+          setDeviceId('environment');
+        }
+      })
       .catch(err => {
-        console.error("Error accessing media devices:", err);
-        setError("Unable to access camera devices. Please ensure camera permissions are granted.");
+        console.error("Error accessing camera:", err);
+        setError("Unable to access camera. Please ensure camera permissions are granted.");
       });
-  }, [handleDevices]);
+    } catch (err) {
+      console.error("Error in getUserMedia:", err);
+      setError("An error occurred while trying to access the camera.");
+    }
+  }, [handleDevices, isIOS]);
 
   useEffect(() => {
     if (isAuthenticated && id && !Array.isArray(id)) {
@@ -224,8 +270,8 @@ export default function ScanBox() {
                     screenshotFormat="image/jpeg"
                     screenshotQuality={0.8}
                     videoConstraints={{
-                      deviceId: deviceId,
-                      facingMode: "environment"
+                      deviceId: deviceId !== 'environment' ? deviceId : undefined,
+                      facingMode: deviceId === 'environment' ? "environment" : undefined
                     }}
                     className="w-full rounded-lg"
                     style={{ height: 'auto' }}
@@ -255,7 +301,8 @@ export default function ScanBox() {
                   ) : 'Capture'}
                 </button>
                 
-                {devices.length > 1 && (
+                {/* Only show the switch camera button if we actually have multiple devices and we're not on iOS */}
+                {devices.length > 1 && !isIOS && (
                   <button
                     onClick={switchCamera}
                     disabled={processing}
@@ -266,9 +313,15 @@ export default function ScanBox() {
                 )}
               </div>
               
-              {devices.length > 0 && (
+              {devices.length > 0 && !isIOS && (
                 <p className="text-center text-sm text-gray-500 mt-2">
                   Camera: {devices.find(d => d.deviceId === deviceId)?.label || 'Unknown Camera'}
+                </p>
+              )}
+              
+              {isIOS && (
+                <p className="text-center text-sm text-gray-500 mt-2">
+                  Using rear camera
                 </p>
               )}
             </div>
