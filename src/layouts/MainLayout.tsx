@@ -44,9 +44,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({
             <Link href="/boxes" className={`px-3 py-2 text-sm font-medium ${isActive('/boxes')}`}>
               Boxes
             </Link>
-            <Link href="/search" className={`px-3 py-2 text-sm font-medium ${isActive('/search')}`}>
-              Search
-            </Link>
             <Link href="/print" className={`px-3 py-2 text-sm font-medium ${isActive('/print')}`}>
               Print
             </Link>
