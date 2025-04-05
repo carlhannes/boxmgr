@@ -26,6 +26,7 @@ export default function CategoryDetail() {
   const [boxes, setBoxes] = useState<Box[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [addingQuickBox, setAddingQuickBox] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated && id && !Array.isArray(id)) {
@@ -84,6 +85,50 @@ export default function CategoryDetail() {
     }
   };
 
+  const getNextBoxNumber = (): number => {
+    if (boxes.length === 0) {
+      return 1;
+    }
+    
+    const maxNumber = Math.max(...boxes.map(box => box.number));
+    return maxNumber + 1;
+  };
+
+  const handleQuickAddBox = async () => {
+    if (!category) return;
+    
+    setAddingQuickBox(true);
+    setError(null);
+    
+    try {
+      const nextNumber = getNextBoxNumber();
+      const response = await fetch('/api/boxes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          number: nextNumber,
+          name: `Box ${nextNumber}`,
+          categoryId: category.id,
+          notes: null
+        })
+      });
+      
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to create box');
+      }
+      
+      const newBox = await response.json();
+      // Redirect to the new box
+      router.push(`/boxes/${newBox.id}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create box');
+      setAddingQuickBox(false);
+    }
+  };
+
   // Show loading state while checking authentication or loading data
   if (isAuthenticated === null || loading) {
     return <div className="flex justify-center items-center h-screen">Loading...</div>;
@@ -125,23 +170,41 @@ export default function CategoryDetail() {
 
           <div className="mb-6 flex justify-between items-center">
             <h2 className="text-xl font-semibold">Boxes in this Category</h2>
-            <Link
-              href={`/boxes/new?categoryId=${category.id}`}
-              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
-            >
-              Add Box
-            </Link>
+            <div className="space-x-2">
+              <button
+                onClick={handleQuickAddBox}
+                disabled={addingQuickBox}
+                className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors disabled:opacity-50"
+              >
+                {addingQuickBox ? 'Adding...' : `Quick Add Box #${getNextBoxNumber()}`}
+              </button>
+              <Link
+                href={`/boxes/new?categoryId=${category.id}`}
+                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+              >
+                Add Box
+              </Link>
+            </div>
           </div>
 
           {boxes.length === 0 ? (
             <div className="text-center py-8 bg-white shadow rounded-lg">
               <p className="text-gray-600 mb-4">No boxes in this category yet</p>
-              <Link
-                href={`/boxes/new?categoryId=${category.id}`}
-                className="text-blue-600 hover:text-blue-800"
-              >
-                Create your first box
-              </Link>
+              <div className="flex justify-center space-x-4">
+                <button
+                  onClick={handleQuickAddBox}
+                  disabled={addingQuickBox}
+                  className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors disabled:opacity-50"
+                >
+                  {addingQuickBox ? 'Adding...' : `Quick Add Box #1`}
+                </button>
+                <Link
+                  href={`/boxes/new?categoryId=${category.id}`}
+                  className="text-blue-600 hover:text-blue-800"
+                >
+                  Create a customized box
+                </Link>
+              </div>
             </div>
           ) : (
             <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
