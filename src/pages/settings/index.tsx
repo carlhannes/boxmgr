@@ -19,6 +19,7 @@ export default function Settings() {
   
   // Form values
   const [anthropicApiKey, setAnthropicApiKey] = useState('');
+  const [language, setLanguage] = useState('');
 
   // Fetch existing settings
   useEffect(() => {
@@ -43,6 +44,12 @@ export default function Settings() {
       if (apiKeySetting) {
         setAnthropicApiKey(apiKeySetting.value);
       }
+
+      // Populate language setting
+      const languageSetting = settingsData.find((s: Setting) => s.key === 'scan_language');
+      if (languageSetting) {
+        setLanguage(languageSetting.value);
+      }
     } catch (err) {
       setError('Error loading settings. Please try again.');
       console.error('Error fetching settings:', err);
@@ -60,7 +67,7 @@ export default function Settings() {
 
     try {
       // Save Anthropic API key
-      const response = await fetch('/api/settings', {
+      const apiKeyResponse = await fetch('/api/settings', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -72,8 +79,25 @@ export default function Settings() {
         }),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to save settings');
+      if (!apiKeyResponse.ok) {
+        throw new Error('Failed to save API key setting');
+      }
+      
+      // Save language setting
+      const languageResponse = await fetch('/api/settings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          key: 'scan_language', 
+          value: language,
+          description: 'Language for AI to use when scanning boxes'
+        }),
+      });
+
+      if (!languageResponse.ok) {
+        throw new Error('Failed to save language setting');
       }
       
       setSuccess('Settings saved successfully!');
@@ -136,6 +160,24 @@ export default function Settings() {
                 >
                   Anthropic Console
                 </a>.
+              </p>
+            </div>
+            
+            <div className="mb-4">
+              <label htmlFor="scan_language" className="block text-sm font-medium text-gray-700 mb-1">
+                Preferred Language
+              </label>
+              <input
+                type="text"
+                id="scan_language"
+                value={language}
+                onChange={(e) => setLanguage(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="e.g., English, Spanish, French, Swedish"
+              />
+              <p className="mt-1 text-sm text-gray-500">
+                When set, Claude AI will identify items and respond in this language when scanning boxes.
+                Leave empty to auto-detect language from existing items.
               </p>
             </div>
 

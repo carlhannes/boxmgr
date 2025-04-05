@@ -146,6 +146,16 @@ async function processImageWithClaude(
     const existingItemsContext = existingItems.length > 0 
       ? `\nThis box already contains the following items:\n- ${existingItemsList}`
       : '\nThis box is currently empty.';
+
+    // Check for language preference in settings
+    const languageSetting = db.prepare('SELECT value FROM settings WHERE key = ?').get('scan_language') as { value: string } | undefined;
+    
+    // Determine what language instruction to include
+    let languageInstruction = '3. If the existing items are in a specific language (not English), use that SAME language for new items';
+    
+    if (languageSetting && languageSetting.value) {
+      languageInstruction = `3. ALWAYS respond in ${languageSetting.value} language`;
+    }
     
     // Initialize Anthropic client
     const anthropic = new Anthropic({
@@ -177,7 +187,7 @@ Please identify items visible in this image that would be relevant to pack in th
 Important instructions:
 1. DO NOT include items that are already in the box list above
 2. Only include physical items visible in the image
-3. If the existing items are in a specific language (not English), use that SAME language for new items
+${languageInstruction}
 4. Format your response as a plain list with each item on a new line starting with an asterisk (*)
 5. Don't include any other text, explanations or comments - ONLY the list of new items
 6. If no new items are detected or all visible items are already in the list, just respond with "* No new items detected"
