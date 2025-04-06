@@ -93,10 +93,10 @@ function getBoxDetails(boxId: string): BoxDetails | null {
         b.id, 
         b.name, 
         b.number,
-        b.categoryId,
+        b.category_id as categoryId,
         c.name as categoryName
       FROM boxes b
-      LEFT JOIN categories c ON b.categoryId = c.id
+      LEFT JOIN categories c ON b.category_id = c.id
       WHERE b.id = ?
     `).get(boxId) as BoxDetails | undefined;
     
@@ -238,10 +238,9 @@ function addItemsToBox(boxId: string, items: string[]): string[] {
       // Check if we already have this item in the database
       let item = db.prepare('SELECT id FROM items WHERE name = ? COLLATE NOCASE').get(itemName) as { id: number } | undefined;
       
-      // If not, create it - include the boxId as it's required in the actual database schema
+      // If not, create it - no longer including boxId as it's not in the schema
       if (!item) {
-        // Include boxId in the insert statement to match the actual database schema
-        const result = db.prepare('INSERT INTO items (name, boxId) VALUES (?, ?)').run(itemName, boxId);
+        const result = db.prepare('INSERT INTO items (name) VALUES (?)').run(itemName);
         item = { id: Number(result.lastInsertRowid) };
       }
       

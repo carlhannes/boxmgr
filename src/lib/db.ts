@@ -130,6 +130,12 @@ function initDb() {
   }
 }
 
+// Function to ensure the database is migrated, wrapping initDb
+export function ensureDatabaseMigrated(): void {
+  initDb();
+  console.log('Database schema checked and migrated if needed');
+}
+
 // Initialize the database
 initDb();
 

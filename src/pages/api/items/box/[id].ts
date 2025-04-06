@@ -1,6 +1,9 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { db } from '@/lib/db';
+import { db, ensureDatabaseMigrated } from '@/lib/db';
 import { withAuth } from '@/lib/authMiddleware';
+
+// Ensure database schema is migrated before handling any requests
+ensureDatabaseMigrated();
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { id } = req.query;
@@ -26,10 +29,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
   switch (req.method) {
     case 'GET':
-      // Get all items in a box
+      // Get all items in a box - using the box_items junction table
       try {
         const items = db
-          .prepare('SELECT * FROM items WHERE boxId = ?')
+          .prepare(`
+            SELECT i.*, bi.quantity 
+            FROM items i
+            JOIN box_items bi ON i.id = bi.item_id
+            WHERE bi.box_id = ?
+          `)
           .all(boxId);
         
         return res.status(200).json(items);
@@ -39,27 +47,45 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       }
 
     case 'POST':
-      // Add item to a box
+      // Add item to a box - need to create item first, then associate with box
       try {
-        const { name } = req.body;
+        const { name, categoryId, quantity = 1 } = req.body;
 
         if (!name) {
           return res.status(400).json({ error: 'Item name is required' });
         }
 
-        const result = db
-          .prepare('INSERT INTO items (name, boxId) VALUES (?, ?)')
-          .run(name, boxId);
-
-        if (result.lastInsertRowid) {
-          const newItem = db
-            .prepare('SELECT * FROM items WHERE id = ?')
-            .get(result.lastInsertRowid);
+        // Begin transaction
+        const transaction = db.transaction(() => {
+          // First insert into items table
+          const itemResult = db
+            .prepare('INSERT INTO items (name, category_id) VALUES (?, ?)')
+            .run(name, categoryId || null);
           
-          return res.status(201).json(newItem);
-        } else {
-          return res.status(500).json({ error: 'Failed to create item' });
-        }
+          const itemId = itemResult.lastInsertRowid;
+          
+          if (!itemId) {
+            throw new Error('Failed to create item');
+          }
+          
+          // Then create association in box_items
+          db.prepare('INSERT INTO box_items (box_id, item_id, quantity) VALUES (?, ?, ?)')
+            .run(boxId, itemId, quantity);
+          
+          // Return the newly created item with its box association
+          return db
+            .prepare(`
+              SELECT i.*, bi.quantity 
+              FROM items i
+              JOIN box_items bi ON i.id = bi.item_id
+              WHERE i.id = ? AND bi.box_id = ?
+            `)
+            .get(itemId, boxId);
+        });
+        
+        // Execute transaction
+        const newItem = transaction();
+        return res.status(201).json(newItem);
       } catch (error) {
         console.error('Error creating item:', error);
         return res.status(500).json({ error: 'Failed to create item' });
