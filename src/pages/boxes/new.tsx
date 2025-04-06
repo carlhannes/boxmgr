@@ -3,12 +3,7 @@ import { useRouter } from 'next/router';
 import Link from 'next/link';
 import MainLayout from '@/layouts/MainLayout';
 import useAuth from '@/lib/useAuth';
-
-interface Category {
-  id: number;
-  name: string;
-  color: string;
-}
+import { Category } from '@/lib/db-schema';
 
 export default function NewBox() {
   const { isAuthenticated } = useAuth();
@@ -81,7 +76,7 @@ export default function NewBox() {
         body: JSON.stringify({ 
           number: parseInt(number.toString(), 10),
           name,
-          categoryId,
+          category_id: categoryId, // Changed from categoryId to category_id to match the API and database
           notes: notes || null 
         }),
       });

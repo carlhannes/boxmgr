@@ -3,22 +3,7 @@ import { useRouter } from 'next/router';
 import Link from 'next/link';
 import MainLayout from '@/layouts/MainLayout';
 import useAuth from '@/lib/useAuth';
-
-interface Box {
-  id: number;
-  number: number;
-  name: string;
-  categoryId: number;
-  notes: string | null;
-  categoryName?: string;
-  categoryColor?: string;
-}
-
-interface Category {
-  id: number;
-  name: string;
-  color: string;
-}
+import { Box, BoxWithCategory, Category } from '@/lib/db-schema';
 
 export default function EditBox() {
   const { isAuthenticated } = useAuth();
@@ -73,10 +58,10 @@ export default function EditBox() {
         throw new Error('Failed to fetch box');
       }
       
-      const data: Box = await response.json();
+      const data: BoxWithCategory = await response.json();
       setNumber(data.number);
       setName(data.name);
-      setCategoryId(data.categoryId);
+      setCategoryId(data.category_id);
       setNotes(data.notes || '');
     } catch (err) {
       setError('Error loading box. Please try again.');
@@ -106,7 +91,7 @@ export default function EditBox() {
         body: JSON.stringify({
           number: parseInt(number.toString(), 10),
           name,
-          categoryId,
+          category_id: categoryId,
           notes: notes || null
         }),
       });
@@ -157,7 +142,7 @@ export default function EditBox() {
               <select
                 id="category"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={categoryId}
+                value={categoryId === '' ? '' : categoryId.toString()}
                 onChange={(e) => setCategoryId(e.target.value ? parseInt(e.target.value, 10) : '')}
                 required
               >

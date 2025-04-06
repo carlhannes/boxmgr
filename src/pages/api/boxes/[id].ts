@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { db } from '@/lib/db';
 import { withAuth } from '@/lib/authMiddleware';
+import { Box, BoxWithCategory, Item } from '@/lib/db-schema';
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { id } = req.query;
@@ -26,7 +27,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
             LEFT JOIN categories c ON b.category_id = c.id 
             WHERE b.id = ?
           `)
-          .get(boxId);
+          .get(boxId) as BoxWithCategory | undefined;
         
         if (!box) {
           return res.status(404).json({ error: 'Box not found' });
@@ -40,7 +41,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
             JOIN box_items bi ON i.id = bi.item_id
             WHERE bi.box_id = ?
           `)
-          .all(boxId);
+          .all(boxId) as Item[];
         
         return res.status(200).json({ ...box, items });
       } catch (error) {
@@ -51,12 +52,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     case 'PUT':
       // Update a box
       try {
-        const { number, name, categoryId, notes } = req.body;
+        const { number, name, category_id, notes } = req.body;
 
         // Check if box exists
         const existingBox = db
           .prepare('SELECT * FROM boxes WHERE id = ?')
-          .get(boxId);
+          .get(boxId) as Box | undefined;
         
         if (!existingBox) {
           return res.status(404).json({ error: 'Box not found' });
@@ -76,18 +77,18 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           values.push(name);
         }
         
-        if (categoryId !== undefined) {
+        if (category_id !== undefined) {
           // Check if category exists
           const category = db
             .prepare('SELECT * FROM categories WHERE id = ?')
-            .get(categoryId);
+            .get(category_id);
           
           if (!category) {
             return res.status(404).json({ error: 'Category not found' });
           }
           
           updates.push('category_id = ?');
-          values.push(categoryId);
+          values.push(category_id);
         }
         
         if (notes !== undefined) {
@@ -106,7 +107,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         
         const updatedBox = db
           .prepare('SELECT * FROM boxes WHERE id = ?')
-          .get(boxId);
+          .get(boxId) as Box;
         
         return res.status(200).json(updatedBox);
       } catch (error) {
@@ -120,7 +121,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         // Check if box exists
         const existingBox = db
           .prepare('SELECT * FROM boxes WHERE id = ?')
-          .get(boxId);
+          .get(boxId) as Box | undefined;
         
         if (!existingBox) {
           return res.status(404).json({ error: 'Box not found' });

@@ -1,13 +1,5 @@
 import { db } from './db';
-
-// User type definition
-export interface User {
-  id: number;
-  username: string;
-  password?: string;
-  isAdmin: boolean;
-  created_at?: string;
-}
+import { User } from './db-schema';
 
 // Authenticate user
 export function authenticateUser(username: string, password: string): User | null {
