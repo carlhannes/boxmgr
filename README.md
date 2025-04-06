@@ -71,10 +71,11 @@ boxmgr/
 
 The application uses a simple relational database with the following tables:
 
-1. **users**: Simple user authentication
+1. **users**: User authentication with admin permissions
    - id (INTEGER, primary key)
    - username (TEXT)
    - password (TEXT)
+   - isAdmin (INTEGER) - Boolean flag for admin privileges
 
 2. **categories**: Groups of boxes by purpose or room
    - id (INTEGER, primary key)
@@ -101,7 +102,9 @@ The application uses a simple relational database with the following tables:
 
 ### Authentication Flow
 
-The application uses a simple username/password authentication system with cookie-based sessions. Authentication is handled by the `authMiddleware.ts` utility, which wraps API routes to ensure they are protected. Frontend authentication state is managed with the `useAuth` hook.
+The application uses a username/password authentication system with cookie-based sessions. Authentication is handled by the `authMiddleware.ts` utility, which wraps API routes to ensure they are protected. Frontend authentication state is managed with the `useAuth` hook.
+
+The system now includes a setup page for initial admin user creation when no users exist, and user management for admins under the settings section.
 
 ## Development Guide
 
@@ -141,11 +144,7 @@ The application uses a simple username/password authentication system with cooki
 
 ### Database Initialization
 
-The SQLite database is automatically initialized when the application starts. Default tables are created, and example users are added if they don't exist. The database file is stored at `data/boxmgr.sqlite`.
-
-Default login credentials:
-- Username: `user` / Password: `password`
-- Username: `spouse` / Password: `password`
+The SQLite database is automatically initialized when the application starts. Default tables are created, and when first started with an empty database, you will be directed to a setup page to create the first admin user.
 
 ### Adding a New Feature
 
@@ -188,6 +187,7 @@ Below is a list of planned features and their current status:
 | AI Box Scanning | ✅ Completed | Use your camera to automatically identify box contents |
 | Language Settings | ✅ Completed | Configure AI to respond in your preferred language |
 | Camera Fallbacks | ✅ Completed | Alternative methods for uploading images when camera access is limited |
+| Initial Setup Page | ✅ Completed | First-time setup page for creating the admin user |
 | User Account Management | ✅ Completed | Create, edit, and delete user accounts with admin roles |
 | Multi-User Access | ✅ Completed | Admin vs standard user permission levels |
 | QR Code Generation | 🔄 Planned | Generate printable QR codes to stick on boxes |

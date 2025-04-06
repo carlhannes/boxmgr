@@ -13,12 +13,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         if (categoryId) {
           // Filter boxes by category
           boxes = db
-            .prepare('SELECT * FROM boxes WHERE categoryId = ? ORDER BY number')
+            .prepare('SELECT * FROM boxes WHERE category_id = ? ORDER BY number')
             .all(categoryId);
         } else {
           // Get all boxes
           boxes = db
-            .prepare('SELECT b.*, c.name as categoryName, c.color as categoryColor FROM boxes b LEFT JOIN categories c ON b.categoryId = c.id ORDER BY b.categoryId, b.number')
+            .prepare('SELECT b.*, c.name as categoryName, c.color as categoryColor FROM boxes b LEFT JOIN categories c ON b.category_id = c.id ORDER BY b.category_id, b.number')
             .all();
         }
         
@@ -47,7 +47,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         }
 
         const result = db
-          .prepare('INSERT INTO boxes (number, name, categoryId, notes) VALUES (?, ?, ?, ?)')
+          .prepare('INSERT INTO boxes (number, name, category_id, notes) VALUES (?, ?, ?, ?)')
           .run(number, name, categoryId, notes || null);
 
         if (result.lastInsertRowid) {

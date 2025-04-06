@@ -76,8 +76,8 @@ const SetupPage: React.FC = () => {
         throw new Error(data.error || 'Setup failed');
       }
 
-      // Redirect to login with a message that setup was successful
-      router.push('/login?setup=success');
+      // Redirect to login with a message that setup was successful and redirect to settings after login
+      router.push('/login?setup=success&redirect=/settings');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Setup failed');
     } finally {

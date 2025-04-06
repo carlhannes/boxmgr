@@ -23,7 +23,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           .prepare(`
             SELECT b.*, c.name as categoryName, c.color as categoryColor 
             FROM boxes b 
-            LEFT JOIN categories c ON b.categoryId = c.id 
+            LEFT JOIN categories c ON b.category_id = c.id 
             WHERE b.id = ?
           `)
           .get(boxId);
@@ -32,9 +32,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           return res.status(404).json({ error: 'Box not found' });
         }
 
-        // Get all items in this box
+        // Get all items in this box using the box_items junction table
         const items = db
-          .prepare('SELECT * FROM items WHERE boxId = ?')
+          .prepare(`
+            SELECT i.* 
+            FROM items i
+            JOIN box_items bi ON i.id = bi.item_id
+            WHERE bi.box_id = ?
+          `)
           .all(boxId);
         
         return res.status(200).json({ ...box, items });
@@ -81,7 +86,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
             return res.status(404).json({ error: 'Category not found' });
           }
           
-          updates.push('categoryId = ?');
+          updates.push('category_id = ?');
           values.push(categoryId);
         }
         
