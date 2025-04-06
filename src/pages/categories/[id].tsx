@@ -3,14 +3,19 @@ import { useRouter } from 'next/router';
 import Link from 'next/link';
 import MainLayout from '@/layouts/MainLayout';
 import useAuth from '@/lib/useAuth';
-import { Category, Box } from '@/lib/db-schema';
+import { Category, Box, ItemWithDetails } from '@/lib/db-schema';
+
+// Define a new interface for boxes with their items
+interface BoxWithItems extends Box {
+  items: ItemWithDetails[];
+}
 
 export default function CategoryDetail() {
   const { isAuthenticated } = useAuth();
   const router = useRouter();
   const { id } = router.query;
   const [category, setCategory] = useState<Category | null>(null);
-  const [boxes, setBoxes] = useState<Box[]>([]);
+  const [boxes, setBoxes] = useState<BoxWithItems[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [addingQuickBox, setAddingQuickBox] = useState(false);
@@ -41,7 +46,25 @@ export default function CategoryDetail() {
       }
       
       const boxesData = await boxesResponse.json();
-      setBoxes(boxesData);
+      
+      // Fetch items for each box
+      const boxesWithItems = await Promise.all(
+        boxesData.map(async (box: Box) => {
+          try {
+            const itemsResponse = await fetch(`/api/items/box/${box.id}`);
+            if (!itemsResponse.ok) {
+              return { ...box, items: [] };
+            }
+            const itemsData = await itemsResponse.json();
+            return { ...box, items: itemsData || [] };
+          } catch (error) {
+            console.error(`Error fetching items for box ${box.id}:`, error);
+            return { ...box, items: [] };
+          }
+        })
+      );
+      
+      setBoxes(boxesWithItems);
     } catch (err) {
       setError('Error loading data. Please try again.');
       console.error('Error fetching category data:', err);
@@ -200,12 +223,19 @@ export default function CategoryDetail() {
                   <div className="p-4">
                     <div className="flex justify-between items-center mb-2">
                       <h3 className="text-lg font-medium">
-                        Box #{box.number}: {box.name}
+                        #{box.number}: {box.name}
                       </h3>
                     </div>
                     {box.notes && (
                       <p className="text-sm text-gray-600 mb-3">{box.notes}</p>
                     )}
+                    
+                    <p className="text-sm text-gray-600 my-2 line-clamp-2">
+                      {box.items && box.items.length > 0 
+                        ? box.items.map(item => item.name).join(', ')
+                        : "(no items)"}
+                    </p>
+                    
                     <div className="flex justify-between mt-4">
                       <Link
                         href={`/boxes/${box.id}`}

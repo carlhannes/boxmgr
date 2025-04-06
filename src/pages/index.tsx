@@ -17,9 +17,13 @@ interface BoxCountsByCategory {
 }
 
 interface BoxData {
-  categoryId: number;
+  id: number;
+  number: number;
+  name: string;
+  category_id: number;
   categoryName: string;
   categoryColor: string;
+  notes?: string;
 }
 
 interface SearchResult {
@@ -90,15 +94,15 @@ export default function Home() {
           const categoryMap = new Map<number, BoxCountsByCategory>();
           
           boxesData.forEach((box: BoxData) => {
-            if (!categoryMap.has(box.categoryId)) {
-              categoryMap.set(box.categoryId, {
-                categoryId: box.categoryId,
+            if (!categoryMap.has(box.category_id)) {
+              categoryMap.set(box.category_id, {
+                categoryId: box.category_id,
                 categoryName: box.categoryName,
                 categoryColor: box.categoryColor,
                 boxCount: 1
               });
             } else {
-              const entry = categoryMap.get(box.categoryId);
+              const entry = categoryMap.get(box.category_id);
               if (entry) {
                 entry.boxCount++;
               }
@@ -273,7 +277,7 @@ export default function Home() {
                               href={`/boxes/${boxId}`} 
                               className="text-lg font-medium hover:text-blue-600"
                             >
-                              Box #{firstItem.boxNumber}: {firstItem.boxName}
+                              #{firstItem.boxNumber}: {firstItem.boxName}
                             </Link>
                             <p className="text-sm text-gray-600">
                               Category: {firstItem.categoryName}

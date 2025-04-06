@@ -163,7 +163,7 @@ export default function PrintOverview() {
                     className="mb-8 bg-white shadow-md rounded-lg p-6"
                   >
                     <h3 className="text-xl font-bold mb-2">
-                      Box #{box.number}: {box.name}
+                      #{box.number}: {box.name}
                     </h3>
                     
                     {box.notes && (

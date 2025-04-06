@@ -102,7 +102,7 @@ export default function Boxes() {
                 />
               )}
               <div className="p-4">
-                <h2 className="text-lg font-medium mb-1">Box #{box.number}: {box.name}</h2>
+                <h2 className="text-lg font-medium mb-1">#{box.number}: {box.name}</h2>
                 {box.categoryName && (
                   <p className="text-sm text-gray-600 mb-2">
                     {box.categoryName}
