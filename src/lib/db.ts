@@ -98,6 +98,68 @@ function initDb() {
     }
   }
   
+  // Check if we need to migrate existing users table to add the created_at column
+  try {
+    db.prepare('SELECT created_at FROM users LIMIT 1').get();
+  } catch {
+    // created_at column doesn't exist, need to add it
+    try {
+      console.log('Adding created_at column to users table...');
+      
+      // SQLite doesn't support adding a column with DEFAULT CURRENT_TIMESTAMP directly
+      // First add the column without a default value
+      db.exec('ALTER TABLE users ADD COLUMN created_at TEXT;');
+      
+      // Then update existing records with current timestamp
+      const currentTime = new Date().toISOString();
+      db.exec(`UPDATE users SET created_at = '${currentTime}';`);
+      
+      console.log('Added created_at column to users table successfully and set values for existing users.');
+    } catch (alterError) {
+      console.error('Error adding created_at column:', alterError);
+      // If we encounter an error, force create a new users table with the right schema
+      try {
+        console.log('Attempting to recreate users table with correct schema...');
+        const currentTime = new Date().toISOString();
+        
+        // Create a backup of current users
+        db.exec(`
+          CREATE TABLE IF NOT EXISTS users_backup (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            isAdmin BOOLEAN NOT NULL DEFAULT 0
+          );
+          
+          INSERT INTO users_backup (id, username, password, isAdmin)
+          SELECT id, username, password, isAdmin FROM users;
+        `);
+        
+        // Drop and recreate the users table with the correct schema
+        db.exec(`
+          DROP TABLE IF EXISTS users;
+          
+          CREATE TABLE users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            isAdmin BOOLEAN NOT NULL DEFAULT 0,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+          );
+          
+          INSERT INTO users (id, username, password, isAdmin, created_at)
+          SELECT id, username, password, isAdmin, '${currentTime}' FROM users_backup;
+          
+          DROP TABLE users_backup;
+        `);
+        
+        console.log('Successfully recreated users table with correct schema.');
+      } catch (recreateError) {
+        console.error('Failed to recreate users table:', recreateError);
+      }
+    }
+  }
+  
   // Ensure at least one admin exists in the system
   try {
     const adminCount = db.prepare('SELECT COUNT(*) as count FROM users WHERE isAdmin = 1').get() as { count: number };
@@ -129,6 +191,65 @@ export function setSetting(key: string, value: string, description?: string): vo
     ON CONFLICT(key) DO UPDATE SET value = excluded.value, description = excluded.description
   `);
   stmt.run(key, value, description || null);
+}
+
+// Function to force migration of the database schema
+export function ensureDatabaseMigrated() {
+  console.log('Ensuring database schema is up to date...');
+  initDb();
+  console.log('Database schema check completed.');
+  
+  // Verify migration was successful
+  try {
+    // Verify users table has the created_at column
+    const userColumns = db.prepare("PRAGMA table_info(users)").all() as {name: string}[];
+    const hasCreatedAt = userColumns.some(col => col.name === 'created_at');
+    
+    if (!hasCreatedAt) {
+      console.error('Migration failed! The created_at column is still missing from users table.');
+      console.error('Attempting to fix by recreating the table...');
+      
+      // Last resort - if migrations failed twice, recreate the table
+      const currentTime = new Date().toISOString();
+      try {
+        db.exec(`
+          -- Create a backup of current users
+          CREATE TABLE IF NOT EXISTS users_backup AS SELECT * FROM users;
+          
+          -- Drop and recreate the users table with the correct schema
+          DROP TABLE users;
+          
+          CREATE TABLE users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            isAdmin BOOLEAN NOT NULL DEFAULT 0,
+            created_at TEXT DEFAULT '${currentTime}'
+          );
+          
+          -- Copy data from backup, adding the created_at column
+          INSERT INTO users (id, username, password, isAdmin, created_at)
+          SELECT 
+            id, 
+            username, 
+            password, 
+            COALESCE(isAdmin, 0),
+            '${currentTime}'
+          FROM users_backup;
+          
+          DROP TABLE users_backup;
+        `);
+        console.log('Users table successfully recreated with the correct schema.');
+      } catch (recreateError) {
+        console.error('Failed in final attempt to fix users table:', recreateError);
+        console.error('APPLICATION MAY NOT FUNCTION CORRECTLY.');
+      }
+    } else {
+      console.log('Verified users table has created_at column.');
+    }
+  } catch (verifyError) {
+    console.error('Error verifying migration:', verifyError);
+  }
 }
 
 export { db };

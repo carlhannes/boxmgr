@@ -195,7 +195,7 @@ export default function Settings() {
         </div>
 
         {/* User Management section - only shown to admin users when we're sure they're admin */}
-        {isAdmin === true && user && (
+        {isAdmin && user && (
           <div className="bg-white shadow rounded-lg p-6 mb-6">
             <UserManagement currentUser={user} />
           </div>

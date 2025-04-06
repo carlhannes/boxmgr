@@ -8,6 +8,11 @@ export interface AuthUser {
   isAdmin: boolean;
 }
 
+// Helper function to resolve value regardless if it's a promise or direct value
+async function resolveValue<T>(value: T | Promise<T>): Promise<T> {
+  return value instanceof Promise ? await value : value;
+}
+
 export default function useAuth(redirectTo: string = '/login') {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -23,16 +28,28 @@ export default function useAuth(redirectTo: string = '/login') {
     }
 
     const checkAuth = async () => {
-      // Check if user is authenticated using cookie
-      const authCookie = getCookie('auth') as string | undefined;
-      
-      if (!authCookie) {
-        // Redirect to login if not authenticated
-        router.push(redirectTo);
-        setIsAuthenticated(false);
-        setUser(null);
-        setIsLoading(false);
-      } else {
+      try {
+        // Check if user is authenticated using cookie
+        const authCookieRaw = getCookie('auth');
+        if (!authCookieRaw) {
+          // Redirect to login if not authenticated
+          router.push(redirectTo);
+          setIsAuthenticated(false);
+          setUser(null);
+          setIsLoading(false);
+          return;
+        }
+        
+        // Ensure we handle both Promise and direct return values
+        const authCookie = await resolveValue(authCookieRaw as string | Promise<string>);
+        if (!authCookie) {
+          router.push(redirectTo);
+          setIsAuthenticated(false);
+          setUser(null);
+          setIsLoading(false);
+          return;
+        }
+        
         try {
           // Try to parse as JSON first (new format)
           const userData = JSON.parse(authCookie) as AuthUser;
@@ -47,6 +64,12 @@ export default function useAuth(redirectTo: string = '/login') {
           });
           setIsAuthenticated(true);
         }
+      } catch (error) {
+        console.error('Error checking authentication:', error);
+        router.push(redirectTo);
+        setIsAuthenticated(false);
+        setUser(null);
+      } finally {
         setIsLoading(false);
       }
     };

@@ -16,24 +16,35 @@ export interface AuthenticatedRequest extends NextApiRequest {
 // Type for next API handlers
 type NextApiHandler = (req: NextApiRequest, res: NextApiResponse) => Promise<void> | void;
 
+// Helper function to resolve value regardless if it's a promise or direct value
+async function resolveValue<T>(value: T | Promise<T>): Promise<T> {
+  return value instanceof Promise ? await value : value;
+}
+
 // Parse auth cookie to get user info
-export function getAuthUser(req: NextApiRequest, res: NextApiResponse): AuthUser | null {
-  const authCookie = getCookie('auth', { req, res }) as string | undefined;
-  
-  if (!authCookie) return null;
-  
+export async function getAuthUser(req: NextApiRequest, res: NextApiResponse): Promise<AuthUser | null> {
   try {
-    // Try to parse as JSON first (new format)
-    return JSON.parse(authCookie) as AuthUser;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const authCookieRaw = getCookie('auth', { req, res });
+    if (!authCookieRaw) return null;
+    
+    // Ensure we handle both Promise and direct return values
+    const authCookie = await resolveValue(authCookieRaw as string | Promise<string>);
+    if (!authCookie) return null;
+    
+    try {
+      // Try to parse as JSON first (new format)
+      return JSON.parse(authCookie) as AuthUser;
+    } catch {
+      // Fall back to old format (just username string)
+      return {
+        username: authCookie,
+        isAdmin: authCookie === 'user', // Default 'user' was admin in old system
+        id: -1 // Placeholder for old format
+      };
+    }
   } catch (error) {
-    // Fall back to old format (just username string)
-    // Ignore parse error and use the fallback
-    return {
-      username: authCookie,
-      isAdmin: authCookie === 'user', // Default 'user' was admin in old system
-      id: -1 // Placeholder for old format
-    };
+    console.error('Error parsing auth cookie:', error);
+    return null;
   }
 }
 
@@ -41,7 +52,7 @@ export function getAuthUser(req: NextApiRequest, res: NextApiResponse): AuthUser
 export function withAuth(handler: NextApiHandler): NextApiHandler {
   return async (req: NextApiRequest, res: NextApiResponse) => {
     // Check for authentication cookie
-    const user = getAuthUser(req, res);
+    const user = await getAuthUser(req, res);
 
     if (!user) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -59,7 +70,7 @@ export function withAuth(handler: NextApiHandler): NextApiHandler {
 export function withAdminAuth(handler: NextApiHandler): NextApiHandler {
   return async (req: NextApiRequest, res: NextApiResponse) => {
     // Check for authentication cookie
-    const user = getAuthUser(req, res);
+    const user = await getAuthUser(req, res);
 
     if (!user) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -78,6 +89,7 @@ export function withAdminAuth(handler: NextApiHandler): NextApiHandler {
 }
 
 // For use in components/pages
-export function isUserAuthenticated(req: NextApiRequest, res: NextApiResponse): boolean {
-  return !!getAuthUser(req, res);
+export async function isUserAuthenticated(req: NextApiRequest, res: NextApiResponse): Promise<boolean> {
+  const user = await getAuthUser(req, res);
+  return !!user;
 }

@@ -1,6 +1,10 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getUserById, updateUser, deleteUser } from '@/lib/users';
 import { withAdminAuth } from '@/lib/authMiddleware';
+import { ensureDatabaseMigrated } from '@/lib/db';
+
+// Ensure database schema is migrated before handling any requests
+ensureDatabaseMigrated();
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { id } = req.query;
