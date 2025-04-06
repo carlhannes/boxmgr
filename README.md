@@ -198,7 +198,8 @@ Below is a list of planned features and their current status:
 Contributions are welcome! If you find a bug or want to add a feature, please open an issue to discuss it before submitting a pull request.
 
 ## License
-
+See LICENSE.md:
+```
             DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE
                     Version 2, December 2004
 
@@ -213,3 +214,4 @@ Contributions are welcome! If you find a bug or want to add a feature, please op
 
   0. You just DO WHAT THE FUCK YOU WANT TO.
 
+```
