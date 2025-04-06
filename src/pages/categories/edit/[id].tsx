@@ -3,12 +3,7 @@ import { useRouter } from 'next/router';
 import Link from 'next/link';
 import MainLayout from '@/layouts/MainLayout';
 import useAuth from '@/lib/useAuth';
-
-interface Category {
-  id: number;
-  name: string;
-  color: string;
-}
+import { Category } from '@/lib/db-schema';
 
 export default function EditCategory() {
   const { isAuthenticated } = useAuth();

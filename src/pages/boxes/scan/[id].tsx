@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 import { useState, useEffect, useRef, useCallback, ChangeEvent } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
@@ -193,7 +194,16 @@ export default function ScanBox() {
     
     try {
       // Read file and convert to base64
-      const base64Image = await readFileAsDataURL(selectedFile);
+      let base64Image = await readFileAsDataURL(selectedFile);
+      
+      // Compress the image to reduce size (especially important for iOS photos)
+      try {
+        base64Image = await compressImage(base64Image);
+        console.log("Image compressed successfully");
+      } catch (compressionErr) {
+        console.error("Compression failed, using original image:", compressionErr);
+        // Continue with original image if compression fails
+      }
       
       // Send image to API for processing
       const response = await fetch(`/api/boxes/${box.id}/scan`, {
@@ -205,8 +215,8 @@ export default function ScanBox() {
       });
       
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to process image');
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.error || `Failed to process image: ${response.status}`);
       }
       
       const result = await response.json();
@@ -236,8 +246,68 @@ export default function ScanBox() {
           reject(new Error('Failed to read file'));
         }
       };
-      reader.onerror = reject;
+      reader.onerror = (error) => {
+        console.error('FileReader error:', error);
+        reject(new Error('Error reading file'));
+      };
       reader.readAsDataURL(file);
+    });
+  };
+
+  // Helper function to compress an image
+  const compressImage = (base64Image: string): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      // Create an image element
+      const img = new Image();
+      img.onload = () => {
+        // Create a canvas for resizing
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        
+        // Calculate new dimensions while keeping aspect ratio
+        const maxDimension = 1200; // Reasonable max size for most APIs
+        if (width > maxDimension || height > maxDimension) {
+          if (width > height) {
+            height *= maxDimension / width;
+            width = maxDimension;
+          } else {
+            width *= maxDimension / height;
+            height = maxDimension;
+          }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        // Draw and compress the image on canvas
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('Could not get canvas context'));
+          return;
+        }
+        
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        // Convert to JPEG with reduced quality
+        try {
+          // Use a quality setting that maintains decent image quality while reducing size
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+          resolve(compressedBase64);
+        } catch (err) {
+          console.error('Error compressing image:', err);
+          // If compression fails, return the original image
+          resolve(base64Image);
+        }
+      };
+      
+      img.onerror = () => {
+        console.error('Error loading image for compression');
+        // Return original if we can't compress
+        resolve(base64Image);
+      };
+      
+      img.src = base64Image;
     });
   };
 
@@ -253,10 +323,19 @@ export default function ScanBox() {
     
     try {
       // Capture image
-      const imageSrc = webcamRef.current.getScreenshot();
+      let imageSrc = webcamRef.current.getScreenshot();
       
       if (!imageSrc) {
         throw new Error('Failed to capture image');
+      }
+      
+      // Compress the image to reduce size (especially important for iOS)
+      try {
+        imageSrc = await compressImage(imageSrc);
+        console.log("Webcam image compressed successfully");
+      } catch (compressionErr) {
+        console.error("Webcam compression failed, using original image:", compressionErr);
+        // Continue with original image if compression fails
       }
       
       // Send image to API for processing
@@ -269,8 +348,8 @@ export default function ScanBox() {
       });
       
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to process image');
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.error || `Failed to process image: ${response.status}`);
       }
       
       const result = await response.json();

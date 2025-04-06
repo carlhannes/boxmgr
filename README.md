@@ -45,6 +45,7 @@ boxmgr/
 │   ├── layouts/            # Page layout templates
 │   ├── lib/                # Shared utilities and hooks
 │   │   ├── authMiddleware.ts   # Authentication middleware
+│   │   ├── db-schema.ts        # Centralized database type definitions
 │   │   ├── db.ts              # Database connection setup
 │   │   ├── useAuth.ts         # Auth hook for components
 │   │   └── users.ts           # User management functions
@@ -71,10 +72,11 @@ boxmgr/
 
 The application uses a simple relational database with the following tables:
 
-1. **users**: Simple user authentication
+1. **users**: User authentication with admin permissions
    - id (INTEGER, primary key)
    - username (TEXT)
    - password (TEXT)
+   - isAdmin (INTEGER) - Boolean flag for admin privileges
 
 2. **categories**: Groups of boxes by purpose or room
    - id (INTEGER, primary key)
@@ -99,9 +101,22 @@ The application uses a simple relational database with the following tables:
    - description (TEXT) - Optional description
    - updated_at (TIMESTAMP) - Last update time
 
+### Type System
+
+The application uses a centralized type system for database entities, defined in `src/lib/db-schema.ts`. This provides several advantages:
+
+- **Single Source of Truth**: All database entity types are defined in one place
+- **Consistent Naming**: Field names follow the database schema conventions (snake_case)
+- **Type Safety**: Ensures proper typing throughout the application
+- **Extended Types**: Includes specialized types for joined queries (e.g., BoxWithCategory)
+
+When working with database entities, always import types from this file rather than creating local type definitions.
+
 ### Authentication Flow
 
-The application uses a simple username/password authentication system with cookie-based sessions. Authentication is handled by the `authMiddleware.ts` utility, which wraps API routes to ensure they are protected. Frontend authentication state is managed with the `useAuth` hook.
+The application uses a username/password authentication system with cookie-based sessions. Authentication is handled by the `authMiddleware.ts` utility, which wraps API routes to ensure they are protected. Frontend authentication state is managed with the `useAuth` hook.
+
+The system now includes a setup page for initial admin user creation when no users exist, and user management for admins under the settings section.
 
 ## Development Guide
 
@@ -141,11 +156,7 @@ The application uses a simple username/password authentication system with cooki
 
 ### Database Initialization
 
-The SQLite database is automatically initialized when the application starts. Default tables are created, and example users are added if they don't exist. The database file is stored at `data/boxmgr.sqlite`.
-
-Default login credentials:
-- Username: `user` / Password: `password`
-- Username: `spouse` / Password: `password`
+The SQLite database is automatically initialized when the application starts. Default tables are created, and when first started with an empty database, you will be directed to a setup page to create the first admin user.
 
 ### Adding a New Feature
 
@@ -162,6 +173,10 @@ When adding new features to the application, follow these steps:
 - **TypeScript**: Use strong typing for all variables and functions. Avoid `any` types.
 - **React Components**: Use functional components with hooks.
 - **API Routes**: Follow the pattern of separating logic by HTTP method using a switch statement.
+- **Database Types**: Use the centralized types from `db-schema.ts` for all database entities
+- **Field Naming**: 
+  - Use snake_case for database field names (e.g., `category_id`) to match the database schema
+  - Use camelCase for local variables and parameters
 - **Naming Conventions**:
   - Files: Use camelCase for utilities, PascalCase for components
   - Functions: Use camelCase
@@ -188,10 +203,11 @@ Below is a list of planned features and their current status:
 | AI Box Scanning | ✅ Completed | Use your camera to automatically identify box contents |
 | Language Settings | ✅ Completed | Configure AI to respond in your preferred language |
 | Camera Fallbacks | ✅ Completed | Alternative methods for uploading images when camera access is limited |
-| User Account Management | 🔄 Planned | Allow users to change passwords and add new accounts |
-| Multi-User Access | 🔄 Planned | Different permission levels for different users |
+| Initial Setup Page | ✅ Completed | First-time setup page for creating the admin user |
+| User Account Management | ✅ Completed | Create, edit, and delete user accounts with admin roles |
+| Multi-User Access | ✅ Completed | Admin vs standard user permission levels |
 | QR Code Generation | 🔄 Planned | Generate printable QR codes to stick on boxes |
-| QR Code Scanner | 🔄 Planned | Scan QR codes on boxes to view their  contents |
+| QR Code Scanner | 🔄 Planned | Scan QR codes on boxes to view their contents |
 
 ## Contributing
 

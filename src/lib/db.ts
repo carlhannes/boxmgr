@@ -1,6 +1,7 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
+import crypto from 'crypto';
 
 // Ensure data directory exists
 const dataDir = path.join(process.cwd(), 'data');
@@ -20,6 +21,14 @@ function initDb() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       username TEXT UNIQUE NOT NULL,
       password TEXT NOT NULL,
+      isAdmin BOOLEAN NOT NULL DEFAULT 0,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS categories (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL UNIQUE,
+      color TEXT,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
@@ -28,15 +37,11 @@ function initDb() {
       name TEXT NOT NULL,
       location TEXT,
       notes TEXT,
+      number INTEGER,
+      category_id INTEGER,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS categories (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL UNIQUE,
-      color TEXT,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE SET NULL
     );
 
     CREATE TABLE IF NOT EXISTS items (
@@ -68,16 +73,77 @@ function initDb() {
   // Check if we need to migrate existing settings table to add the description column
   try {
     db.prepare('SELECT description FROM settings LIMIT 1').get();
-  } catch (error) {
+  } catch {
     // description column doesn't exist, need to add it
     try {
-      console.log('Adding description column to settings table...', error);
+      console.log('Adding description column to settings table...');
       db.exec('ALTER TABLE settings ADD COLUMN description TEXT;');
       console.log('Added description column to settings table successfully.');
     } catch (alterError) {
       console.error('Error adding description column:', alterError);
     }
   }
+
+  // Check if we need to migrate existing users table to add the isAdmin column
+  try {
+    db.prepare('SELECT isAdmin FROM users LIMIT 1').get();
+  } catch {
+    // isAdmin column doesn't exist, need to add it
+    try {
+      console.log('Adding isAdmin column to users table...');
+      db.exec('ALTER TABLE users ADD COLUMN isAdmin BOOLEAN NOT NULL DEFAULT 0;');
+      console.log('Added isAdmin column to users table successfully.');
+      
+      // Set all existing users as admin by default for backward compatibility
+      db.exec("UPDATE users SET isAdmin = 1;");
+      console.log('Set existing users as admin.');
+    } catch (alterError) {
+      console.error('Error adding isAdmin column:', alterError);
+    }
+  }
+  
+  // Check if we need to migrate existing boxes table to add the category_id column
+  try {
+    db.prepare('SELECT category_id FROM boxes LIMIT 1').get();
+  } catch {
+    // category_id column doesn't exist, need to add it
+    try {
+      console.log('Adding category_id column to boxes table...');
+      db.exec('ALTER TABLE boxes ADD COLUMN category_id INTEGER REFERENCES categories(id) ON DELETE SET NULL;');
+      console.log('Added category_id column to boxes table successfully.');
+    } catch (alterError) {
+      console.error('Error adding category_id column to boxes table:', alterError);
+    }
+  }
+  
+  // Check if we need to migrate existing boxes table to add the number column
+  try {
+    db.prepare('SELECT number FROM boxes LIMIT 1').get();
+  } catch {
+    // number column doesn't exist, need to add it
+    try {
+      console.log('Adding number column to boxes table...');
+      db.exec('ALTER TABLE boxes ADD COLUMN number INTEGER;');
+      console.log('Added number column to boxes table successfully.');
+    } catch (alterError) {
+      console.error('Error adding number column to boxes table:', alterError);
+    }
+  }
+  
+  // Generate and save JWT secret if it doesn't exist
+  const jwtSecret = getSetting('jwt_secret');
+  if (!jwtSecret) {
+    console.log('Generating new JWT secret...');
+    const newSecret = crypto.randomBytes(64).toString('hex');
+    setSetting('jwt_secret', newSecret, 'Secret key used for JWT token signing');
+    console.log('JWT secret generated and stored successfully.');
+  }
+}
+
+// Function to ensure the database is migrated, wrapping initDb
+export function ensureDatabaseMigrated(): void {
+  initDb();
+  console.log('Database schema checked and migrated if needed');
 }
 
 // Initialize the database

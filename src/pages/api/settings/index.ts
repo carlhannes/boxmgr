@@ -1,12 +1,13 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { db, setSetting } from '@/lib/db';
 import { withAuth } from '@/lib/authMiddleware';
+import { Setting } from '@/lib/db-schema';
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   // GET request - Fetch all settings
   if (req.method === 'GET') {
     try {
-      const settings = db.prepare('SELECT key, value, description FROM settings').all();
+      const settings = db.prepare('SELECT key, value, description FROM settings').all() as Setting[];
       return res.status(200).json(settings);
     } catch (error) {
       console.error('Error fetching settings:', error);

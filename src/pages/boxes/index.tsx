@@ -2,20 +2,11 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import MainLayout from '@/layouts/MainLayout';
 import useAuth from '@/lib/useAuth';
-
-interface Box {
-  id: number;
-  number: number;
-  name: string;
-  categoryId: number;
-  notes: string | null;
-  categoryName?: string;
-  categoryColor?: string;
-}
+import { BoxWithCategory } from '@/lib/db-schema';
 
 export default function Boxes() {
   const { isAuthenticated } = useAuth();
-  const [boxes, setBoxes] = useState<Box[]>([]);
+  const [boxes, setBoxes] = useState<BoxWithCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -111,12 +102,7 @@ export default function Boxes() {
                 />
               )}
               <div className="p-4">
-                <h2 className="text-lg font-medium mb-1">Box #{box.number}: {box.name}</h2>
-                {box.categoryName && (
-                  <p className="text-sm text-gray-600 mb-2">
-                    {box.categoryName}
-                  </p>
-                )}
+                <h2 className="text-lg font-medium mb-1">{box.categoryName} #{box.number}: {box.name}</h2>
                 {box.notes && (
                   <p className="text-sm text-gray-600 mb-3">{box.notes}</p>
                 )}
