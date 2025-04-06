@@ -29,13 +29,34 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         c.name as categoryName, 
         c.color as categoryColor
       FROM items i
-      JOIN boxes b ON i.boxId = b.id
-      JOIN categories c ON b.categoryId = c.id
+      JOIN box_items bi ON i.id = bi.item_id
+      JOIN boxes b ON bi.box_id = b.id
+      JOIN categories c ON b.category_id = c.id
       WHERE i.name LIKE ?
       ORDER BY c.name, b.number, i.name
     `).all(searchTerm);
     
-    return res.status(200).json(results);
+    // Also search by box name and number
+    const boxResults = db.prepare(`
+      SELECT 
+        NULL as itemId,
+        NULL as itemName,
+        b.id as boxId, 
+        b.name as boxName, 
+        b.number as boxNumber,
+        c.id as categoryId, 
+        c.name as categoryName, 
+        c.color as categoryColor
+      FROM boxes b
+      JOIN categories c ON b.category_id = c.id
+      WHERE b.name LIKE ? OR CAST(b.number AS TEXT) LIKE ?
+      ORDER BY c.name, b.number
+    `).all(searchTerm, searchTerm);
+    
+    // Combine both result sets
+    const combinedResults = [...results, ...boxResults];
+    
+    return res.status(200).json(combinedResults);
   } catch (error) {
     console.error('Error searching items:', error);
     return res.status(500).json({ error: 'Failed to search items' });

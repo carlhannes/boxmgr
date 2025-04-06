@@ -156,7 +156,7 @@ export default function BoxDetail() {
             )}
             <div className="p-4">
               <div className="flex justify-between items-center mb-2">
-                <h1 className="text-2xl font-bold">Box #{box.number}: {box.name}</h1>
+                <h1 className="text-2xl font-bold">#{box.number}: {box.name}</h1>
                 <div className="flex space-x-4">
                   <button 
                     onClick={navigateToScanBox}
