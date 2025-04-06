@@ -1,6 +1,7 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
+import crypto from 'crypto';
 
 // Ensure data directory exists
 const dataDir = path.join(process.cwd(), 'data');
@@ -127,6 +128,15 @@ function initDb() {
     } catch (alterError) {
       console.error('Error adding number column to boxes table:', alterError);
     }
+  }
+  
+  // Generate and save JWT secret if it doesn't exist
+  const jwtSecret = getSetting('jwt_secret');
+  if (!jwtSecret) {
+    console.log('Generating new JWT secret...');
+    const newSecret = crypto.randomBytes(64).toString('hex');
+    setSetting('jwt_secret', newSecret, 'Secret key used for JWT token signing');
+    console.log('JWT secret generated and stored successfully.');
   }
 }
 

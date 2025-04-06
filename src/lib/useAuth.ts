@@ -8,11 +8,6 @@ export interface AuthUser {
   isAdmin: boolean;
 }
 
-// Helper function to resolve value regardless if it's a promise or direct value
-async function resolveValue<T>(value: T | Promise<T>): Promise<T> {
-  return value instanceof Promise ? await value : value;
-}
-
 export default function useAuth(redirectTo: string = '/login') {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -29,43 +24,64 @@ export default function useAuth(redirectTo: string = '/login') {
 
     const checkAuth = async () => {
       try {
-        // Check if user is authenticated using cookie
-        const authCookieRaw = getCookie('auth');
-        if (!authCookieRaw) {
-          // Redirect to login if not authenticated
+        // Check for auth_status cookie first (the non-httpOnly one)
+        const authStatus = getCookie('auth_status');
+        
+        // If no auth status cookie, we're definitely not authenticated
+        if (!authStatus) {
           router.push(redirectTo);
           setIsAuthenticated(false);
           setUser(null);
           setIsLoading(false);
           return;
         }
-        
-        // Ensure we handle both Promise and direct return values
-        const authCookie = await resolveValue(authCookieRaw as string | Promise<string>);
-        if (!authCookie) {
-          router.push(redirectTo);
-          setIsAuthenticated(false);
-          setUser(null);
-          setIsLoading(false);
-          return;
-        }
-        
+
+        // Make API call to verify authentication and get user data
+        // The server will check the httpOnly auth_token cookie
         try {
-          // Try to parse as JSON first (new format)
-          const userData = JSON.parse(authCookie) as AuthUser;
-          setUser(userData);
-          setIsAuthenticated(true);
-        } catch {
-          // Fall back to old format (just username string)
-          setUser({
-            username: authCookie,
-            isAdmin: authCookie === 'user', // Default 'user' was admin in old system
-            id: -1 // Placeholder for old format
+          const response = await fetch('/api/auth/verify', {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
           });
+          
+          if (!response.ok) {
+            console.error('useAuth: Verify API returned non-OK status', response.status);
+            throw new Error('Failed to verify user');
+          }
+          
+          const data = await response.json();
+          
+          if (!data.authenticated) {
+            console.warn('useAuth: Server reports not authenticated, redirecting to login');
+            router.push(redirectTo);
+            setIsAuthenticated(false);
+            setUser(null);
+            setIsLoading(false);
+            return;
+          }
+          
+          if (!data.user) {
+            console.warn('useAuth: No user data in response, redirecting to login');
+            router.push(redirectTo);
+            setIsAuthenticated(false);
+            setUser(null);
+            setIsLoading(false);
+            return;
+          }
+          
+          // Use the verified user data from the server
+          setUser(data.user);
           setIsAuthenticated(true);
+        } catch (error) {
+          console.error('useAuth: Error verifying token:', error);
+          router.push(redirectTo);
+          setIsAuthenticated(false);
+          setUser(null);
         }
       } catch (error) {
-        console.error('Error checking authentication:', error);
+        console.error('useAuth: Error checking authentication:', error);
         router.push(redirectTo);
         setIsAuthenticated(false);
         setUser(null);

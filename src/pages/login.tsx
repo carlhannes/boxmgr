@@ -17,31 +17,52 @@ const LoginPage: React.FC = () => {
       setSetupSuccess(true);
     }
     
-    // If user is already logged in, redirect to home
-    const authCookie = getCookie('auth');
-    if (authCookie) {
-      router.push(redirectPath || '/');
-      return;
-    }
-    
-    // Check if there are any users, if not redirect to setup
-    const checkUsers = async () => {
+    // Check for auth cookie and verify it before redirecting
+    const checkAuth = async () => {
       try {
-        const response = await fetch('/api/auth/check-users');
-        const data = await response.json();
+        // First check for the auth_status cookie that's accessible to JavaScript
+        const authStatus = getCookie('auth_status');
         
-        if (response.ok && !data.hasUsers) {
+        if (authStatus) {
+          console.log('Login page: Auth status cookie exists, verifying with API');
+          
+          // Verify the token is valid before redirecting
+          const response = await fetch('/api/auth/verify', {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            }
+          });
+          
+          const data = await response.json();
+          
+          if (response.ok && data.authenticated && data.user) {
+            console.log('Login page: Valid auth token verified, redirecting');
+            router.push(redirectPath || '/');
+            return;
+          } else {
+            console.log('Login page: Auth cookie exists but validation failed, staying on login page');
+          }
+        }
+        
+        // If no valid auth, check if there are any users
+        const userResponse = await fetch('/api/auth/check-users');
+        const userData = await userResponse.json();
+        
+        if (userResponse.ok && !userData.hasUsers) {
+          console.log('Login page: No users exist, redirecting to setup');
           router.push('/setup');
           return;
         }
+        
+        setIsLoading(false);
       } catch (error) {
-        console.error('Failed to check users:', error);
+        console.error('Login page: Error checking authentication:', error);
+        setIsLoading(false);
       }
-      
-      setIsLoading(false);
     };
     
-    checkUsers();
+    checkAuth();
   }, [router, redirectPath, setup]);
 
   if (isLoading) {

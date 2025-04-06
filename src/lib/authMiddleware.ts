@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getCookie } from 'cookies-next';
+import { verifyToken } from './tokenAuth';
 
 // Auth user type
 export interface AuthUser {
@@ -21,21 +22,39 @@ async function resolveValue<T>(value: T | Promise<T>): Promise<T> {
   return value instanceof Promise ? await value : value;
 }
 
-// Parse auth cookie to get user info
+// Parse auth cookie and verify token
 export async function getAuthUser(req: NextApiRequest, res: NextApiResponse): Promise<AuthUser | null> {
   try {
+    // Try to get the new auth_token cookie
+    const authTokenRaw = getCookie('auth_token', { req, res });
+    if (authTokenRaw) {
+      // Resolve token value
+      const authToken = await resolveValue(authTokenRaw as string | Promise<string>);
+      if (!authToken) return null;
+      
+      // Verify the token
+      const user = verifyToken(authToken);
+      if (user) {
+        return user;
+      }
+    }
+    
+    // Fall back to legacy 'auth' cookie for backward compatibility
     const authCookieRaw = getCookie('auth', { req, res });
     if (!authCookieRaw) return null;
     
-    // Ensure we handle both Promise and direct return values
     const authCookie = await resolveValue(authCookieRaw as string | Promise<string>);
     if (!authCookie) return null;
     
+    // Try legacy format handling
     try {
-      // Try to parse as JSON first (new format)
-      return JSON.parse(authCookie) as AuthUser;
+      // Try to parse as JSON (old format)
+      const parsedUser = JSON.parse(authCookie) as AuthUser;
+      console.warn('Using legacy authentication format. Please log out and log in again.');
+      return parsedUser;
     } catch {
-      // Fall back to old format (just username string)
+      // Even older format (just username string)
+      console.warn('Using very old authentication format. Please log out and log in again.');
       return {
         username: authCookie,
         isAdmin: authCookie === 'user', // Default 'user' was admin in old system
