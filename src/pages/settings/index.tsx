@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import MainLayout from '@/layouts/MainLayout';
 import useAuth from '@/lib/useAuth';
+import UserManagement from '@/components/UserManagement';
 
 interface Setting {
   key: string;
@@ -9,7 +10,7 @@ interface Setting {
 }
 
 export default function Settings() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user, isAdmin, isLoading } = useAuth();
   // We track settings but only use it indirectly through the API key setting
   const [, setSettings] = useState<Setting[]>([]);
   const [loading, setLoading] = useState(true);
@@ -113,7 +114,7 @@ export default function Settings() {
   };
 
   // Show loading state while checking authentication
-  if (isAuthenticated === null || loading) {
+  if (isAuthenticated === null || isLoading || loading) {
     return <div className="flex justify-center items-center h-screen">Loading...</div>;
   }
 
@@ -192,6 +193,13 @@ export default function Settings() {
             </div>
           </form>
         </div>
+
+        {/* User Management section - only shown to admin users when we're sure they're admin */}
+        {isAdmin === true && user && (
+          <div className="bg-white shadow rounded-lg p-6 mb-6">
+            <UserManagement currentUser={user} />
+          </div>
+        )}
 
         <div className="text-right text-sm text-gray-500">
           <p>

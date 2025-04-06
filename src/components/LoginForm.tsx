@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/router';
 
-const LoginForm: React.FC = () => {
+const LoginForm: React.FC<{redirectPath?: string}> = ({ redirectPath }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -19,7 +19,11 @@ const LoginForm: React.FC = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ 
+          username: username.toLowerCase(), // Convert to lowercase for case-insensitive comparison
+          password, 
+          redirect: redirectPath 
+        }),
       });
 
       const data = await response.json();
@@ -28,8 +32,8 @@ const LoginForm: React.FC = () => {
         throw new Error(data.error || 'Login failed');
       }
 
-      // If successful, redirect to home page
-      router.push('/');
+      // Redirect to the specified path or the one returned by the API
+      router.push(data.redirect || redirectPath || '/');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
     } finally {

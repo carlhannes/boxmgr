@@ -188,10 +188,10 @@ Below is a list of planned features and their current status:
 | AI Box Scanning | ✅ Completed | Use your camera to automatically identify box contents |
 | Language Settings | ✅ Completed | Configure AI to respond in your preferred language |
 | Camera Fallbacks | ✅ Completed | Alternative methods for uploading images when camera access is limited |
-| User Account Management | 🔄 Planned | Allow users to change passwords and add new accounts |
-| Multi-User Access | 🔄 Planned | Different permission levels for different users |
+| User Account Management | ✅ Completed | Create, edit, and delete user accounts with admin roles |
+| Multi-User Access | ✅ Completed | Admin vs standard user permission levels |
 | QR Code Generation | 🔄 Planned | Generate printable QR codes to stick on boxes |
-| QR Code Scanner | 🔄 Planned | Scan QR codes on boxes to view their  contents |
+| QR Code Scanner | 🔄 Planned | Scan QR codes on boxes to view their contents |
 
 ## Contributing
 
