@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { db } from '@/lib/db';
 import { withAuth } from '@/lib/authMiddleware';
+import { Category } from '@/lib/db-schema';
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { id } = req.query;
@@ -21,7 +22,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       try {
         const category = db
           .prepare('SELECT * FROM categories WHERE id = ?')
-          .get(categoryId);
+          .get(categoryId) as Category | undefined;
         
         if (!category) {
           return res.status(404).json({ error: 'Category not found' });
@@ -45,7 +46,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         // Check if category exists
         const existingCategory = db
           .prepare('SELECT * FROM categories WHERE id = ?')
-          .get(categoryId);
+          .get(categoryId) as Category | undefined;
         
         if (!existingCategory) {
           return res.status(404).json({ error: 'Category not found' });
@@ -72,7 +73,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         
         const updatedCategory = db
           .prepare('SELECT * FROM categories WHERE id = ?')
-          .get(categoryId);
+          .get(categoryId) as Category;
         
         return res.status(200).json(updatedCategory);
       } catch (error) {
@@ -86,7 +87,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         // Check if category exists
         const existingCategory = db
           .prepare('SELECT * FROM categories WHERE id = ?')
-          .get(categoryId);
+          .get(categoryId) as Category | undefined;
         
         if (!existingCategory) {
           return res.status(404).json({ error: 'Category not found' });

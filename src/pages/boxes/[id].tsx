@@ -3,29 +3,14 @@ import { useRouter } from 'next/router';
 import Link from 'next/link';
 import MainLayout from '@/layouts/MainLayout';
 import useAuth from '@/lib/useAuth';
-
-interface Box {
-  id: number;
-  number: number;
-  name: string;
-  categoryId: number;
-  notes: string | null;
-  categoryName?: string;
-  categoryColor?: string;
-}
-
-interface Item {
-  id: number;
-  name: string;
-  boxId: number;
-}
+import { BoxWithCategory, ItemWithDetails } from '@/lib/db-schema';
 
 export default function BoxDetail() {
   const { isAuthenticated } = useAuth();
   const router = useRouter();
   const { id } = router.query;
-  const [box, setBox] = useState<Box | null>(null);
-  const [items, setItems] = useState<Item[]>([]);
+  const [box, setBox] = useState<BoxWithCategory | null>(null);
+  const [items, setItems] = useState<ItemWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [newItemName, setNewItemName] = useState('');
@@ -153,7 +138,7 @@ export default function BoxDetail() {
 
       <div className="mb-6">
         <Link 
-          href={box?.categoryId ? `/categories/${box.categoryId}` : "/boxes"} 
+          href={box?.category_id ? `/categories/${box.category_id}` : "/boxes"} 
           className="text-blue-600 hover:text-blue-800"
         >
           &larr; Back to {box?.categoryName || 'Boxes'}

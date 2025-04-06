@@ -8,7 +8,7 @@ import { Category } from '@/lib/db-schema';
 export default function NewBox() {
   const { isAuthenticated } = useAuth();
   const router = useRouter();
-  const { categoryId: initialCategoryId } = router.query;
+  const { category_id: initialCategoryId } = router.query;
   
   const [number, setNumber] = useState<number | ''>('');
   const [name, setName] = useState('');

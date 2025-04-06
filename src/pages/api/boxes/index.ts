@@ -8,14 +8,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     case 'GET':
       // Get all boxes or filter by category
       try {
-        const { categoryId } = req.query;
+        const { category_id } = req.query;
         
         let boxes;
-        if (categoryId) {
+        if (category_id) {
           // Filter boxes by category
           boxes = db
             .prepare('SELECT * FROM boxes WHERE category_id = ? ORDER BY number')
-            .all(categoryId) as Box[];
+            .all(category_id) as Box[];
         } else {
           // Get all boxes
           boxes = db

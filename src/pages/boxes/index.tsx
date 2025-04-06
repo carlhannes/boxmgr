@@ -2,20 +2,11 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import MainLayout from '@/layouts/MainLayout';
 import useAuth from '@/lib/useAuth';
-
-interface Box {
-  id: number;
-  number: number;
-  name: string;
-  categoryId: number;
-  notes: string | null;
-  categoryName?: string;
-  categoryColor?: string;
-}
+import { BoxWithCategory } from '@/lib/db-schema';
 
 export default function Boxes() {
   const { isAuthenticated } = useAuth();
-  const [boxes, setBoxes] = useState<Box[]>([]);
+  const [boxes, setBoxes] = useState<BoxWithCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 

@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { db, ensureDatabaseMigrated } from '@/lib/db';
 import { withAuth } from '@/lib/authMiddleware';
+import { Box, ItemWithDetails } from '@/lib/db-schema';
 
 // Ensure database schema is migrated before handling any requests
 ensureDatabaseMigrated();
@@ -21,7 +22,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   // Check if box exists
   const box = db
     .prepare('SELECT * FROM boxes WHERE id = ?')
-    .get(boxId);
+    .get(boxId) as Box | undefined;
   
   if (!box) {
     return res.status(404).json({ error: 'Box not found' });
@@ -38,7 +39,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
             JOIN box_items bi ON i.id = bi.item_id
             WHERE bi.box_id = ?
           `)
-          .all(boxId);
+          .all(boxId) as ItemWithDetails[];
         
         return res.status(200).json(items);
       } catch (error) {
@@ -49,7 +50,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     case 'POST':
       // Add item to a box - need to create item first, then associate with box
       try {
-        const { name, categoryId, quantity = 1 } = req.body;
+        const { name, category_id, quantity = 1 } = req.body;
 
         if (!name) {
           return res.status(400).json({ error: 'Item name is required' });
@@ -60,7 +61,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           // First insert into items table
           const itemResult = db
             .prepare('INSERT INTO items (name, category_id) VALUES (?, ?)')
-            .run(name, categoryId || null);
+            .run(name, category_id || null);
           
           const itemId = itemResult.lastInsertRowid;
           
@@ -80,7 +81,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
               JOIN box_items bi ON i.id = bi.item_id
               WHERE i.id = ? AND bi.box_id = ?
             `)
-            .get(itemId, boxId);
+            .get(itemId, boxId) as ItemWithDetails;
         });
         
         // Execute transaction

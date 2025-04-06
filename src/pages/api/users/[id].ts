@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { getUserById, updateUser, deleteUser } from '@/lib/users';
 import { withAdminAuth } from '@/lib/authMiddleware';
 import { ensureDatabaseMigrated } from '@/lib/db';
+import { User } from '@/lib/db-schema';
 
 // Ensure database schema is migrated before handling any requests
 ensureDatabaseMigrated();
@@ -23,7 +24,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     }
     
     // Return user without password
-    const userWithoutPassword = {
+    const userWithoutPassword: Omit<User, 'password'> = {
       id: user.id,
       username: user.username,
       isAdmin: user.isAdmin,

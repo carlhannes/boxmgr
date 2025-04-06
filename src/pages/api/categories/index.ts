@@ -1,14 +1,13 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { db } from '@/lib/db';
 import { withAuth } from '@/lib/authMiddleware';
-import { Category } from '@/lib/db-schema';
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   switch (req.method) {
     case 'GET':
       // Get all categories
       try {
-        const categories = db.prepare('SELECT * FROM categories').all() as Category[];
+        const categories = db.prepare('SELECT * FROM categories').all();
         return res.status(200).json(categories);
       } catch (error) {
         console.error('Error fetching categories:', error);
@@ -31,7 +30,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         if (result.lastInsertRowid) {
           const newCategory = db
             .prepare('SELECT * FROM categories WHERE id = ?')
-            .get(result.lastInsertRowid) as Category;
+            .get(result.lastInsertRowid);
           
           return res.status(201).json(newCategory);
         } else {

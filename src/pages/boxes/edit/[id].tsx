@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import Link from 'next/link';
 import MainLayout from '@/layouts/MainLayout';
 import useAuth from '@/lib/useAuth';
-import { Box, BoxWithCategory, Category } from '@/lib/db-schema';
+import { BoxWithCategory, Category } from '@/lib/db-schema';
 
 export default function EditBox() {
   const { isAuthenticated } = useAuth();

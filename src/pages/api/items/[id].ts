@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { db } from '@/lib/db';
 import { withAuth } from '@/lib/authMiddleware';
+import { Item } from '@/lib/db-schema';
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { id } = req.query;
@@ -21,7 +22,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       try {
         const item = db
           .prepare('SELECT * FROM items WHERE id = ?')
-          .get(itemId);
+          .get(itemId) as Item | undefined;
         
         if (!item) {
           return res.status(404).json({ error: 'Item not found' });
@@ -36,7 +37,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     case 'PUT':
       // Update an item
       try {
-        const { name } = req.body;
+        const { name, category_id } = req.body;
 
         if (!name) {
           return res.status(400).json({ error: 'Item name is required' });
@@ -45,19 +46,24 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         // Check if item exists
         const existingItem = db
           .prepare('SELECT * FROM items WHERE id = ?')
-          .get(itemId);
+          .get(itemId) as Item | undefined;
         
         if (!existingItem) {
           return res.status(404).json({ error: 'Item not found' });
         }
 
         // Update the item
-        db.prepare('UPDATE items SET name = ? WHERE id = ?')
-          .run(name, itemId);
+        if (category_id !== undefined) {
+          db.prepare('UPDATE items SET name = ?, category_id = ? WHERE id = ?')
+            .run(name, category_id, itemId);
+        } else {
+          db.prepare('UPDATE items SET name = ? WHERE id = ?')
+            .run(name, itemId);
+        }
         
         const updatedItem = db
           .prepare('SELECT * FROM items WHERE id = ?')
-          .get(itemId);
+          .get(itemId) as Item;
         
         return res.status(200).json(updatedItem);
       } catch (error) {
@@ -71,7 +77,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         // Check if item exists
         const existingItem = db
           .prepare('SELECT * FROM items WHERE id = ?')
-          .get(itemId);
+          .get(itemId) as Item | undefined;
         
         if (!existingItem) {
           return res.status(404).json({ error: 'Item not found' });

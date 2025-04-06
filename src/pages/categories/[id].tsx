@@ -3,20 +3,7 @@ import { useRouter } from 'next/router';
 import Link from 'next/link';
 import MainLayout from '@/layouts/MainLayout';
 import useAuth from '@/lib/useAuth';
-
-interface Category {
-  id: number;
-  name: string;
-  color: string;
-}
-
-interface Box {
-  id: number;
-  number: number;
-  name: string;
-  categoryId: number;
-  notes: string | null;
-}
+import { Category, Box } from '@/lib/db-schema';
 
 export default function CategoryDetail() {
   const { isAuthenticated } = useAuth();
@@ -47,7 +34,7 @@ export default function CategoryDetail() {
       setCategory(categoryData);
       
       // Fetch boxes for this category
-      const boxesResponse = await fetch(`/api/boxes?categoryId=${categoryId}`);
+      const boxesResponse = await fetch(`/api/boxes?category_id=${categoryId}`);
       
       if (!boxesResponse.ok) {
         throw new Error('Failed to fetch boxes');
@@ -110,7 +97,7 @@ export default function CategoryDetail() {
         body: JSON.stringify({
           number: nextNumber,
           name: `Box ${nextNumber}`,
-          categoryId: category.id,
+          category_id: category.id,
           notes: null
         })
       });
@@ -179,7 +166,7 @@ export default function CategoryDetail() {
                 {addingQuickBox ? 'Adding...' : `Quick Add Box #${getNextBoxNumber()}`}
               </button>
               <Link
-                href={`/boxes/new?categoryId=${category.id}`}
+                href={`/boxes/new?category_id=${category.id}`}
                 className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
               >
                 Add Box
@@ -199,7 +186,7 @@ export default function CategoryDetail() {
                   {addingQuickBox ? 'Adding...' : `Quick Add Box #1`}
                 </button>
                 <Link
-                  href={`/boxes/new?categoryId=${category.id}`}
+                  href={`/boxes/new?category_id=${category.id}`}
                   className="text-blue-600 hover:text-blue-800"
                 >
                   Create a customized box

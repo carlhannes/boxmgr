@@ -45,6 +45,7 @@ boxmgr/
 │   ├── layouts/            # Page layout templates
 │   ├── lib/                # Shared utilities and hooks
 │   │   ├── authMiddleware.ts   # Authentication middleware
+│   │   ├── db-schema.ts        # Centralized database type definitions
 │   │   ├── db.ts              # Database connection setup
 │   │   ├── useAuth.ts         # Auth hook for components
 │   │   └── users.ts           # User management functions
@@ -99,6 +100,17 @@ The application uses a simple relational database with the following tables:
    - value (TEXT) - Setting value
    - description (TEXT) - Optional description
    - updated_at (TIMESTAMP) - Last update time
+
+### Type System
+
+The application uses a centralized type system for database entities, defined in `src/lib/db-schema.ts`. This provides several advantages:
+
+- **Single Source of Truth**: All database entity types are defined in one place
+- **Consistent Naming**: Field names follow the database schema conventions (snake_case)
+- **Type Safety**: Ensures proper typing throughout the application
+- **Extended Types**: Includes specialized types for joined queries (e.g., BoxWithCategory)
+
+When working with database entities, always import types from this file rather than creating local type definitions.
 
 ### Authentication Flow
 
@@ -161,6 +173,10 @@ When adding new features to the application, follow these steps:
 - **TypeScript**: Use strong typing for all variables and functions. Avoid `any` types.
 - **React Components**: Use functional components with hooks.
 - **API Routes**: Follow the pattern of separating logic by HTTP method using a switch statement.
+- **Database Types**: Use the centralized types from `db-schema.ts` for all database entities
+- **Field Naming**: 
+  - Use snake_case for database field names (e.g., `category_id`) to match the database schema
+  - Use camelCase for local variables and parameters
 - **Naming Conventions**:
   - Files: Use camelCase for utilities, PascalCase for components
   - Functions: Use camelCase

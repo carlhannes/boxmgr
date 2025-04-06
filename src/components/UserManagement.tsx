@@ -1,12 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AuthUser } from '@/lib/authMiddleware';
-
-interface User {
-  id: number;
-  username: string;
-  isAdmin: boolean;
-  created_at?: string;
-}
+import { User } from '@/lib/db-schema';
 
 interface UserManagementProps {
   currentUser: AuthUser;
