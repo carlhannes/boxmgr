@@ -102,12 +102,7 @@ export default function Boxes() {
                 />
               )}
               <div className="p-4">
-                <h2 className="text-lg font-medium mb-1">#{box.number}: {box.name}</h2>
-                {box.categoryName && (
-                  <p className="text-sm text-gray-600 mb-2">
-                    {box.categoryName}
-                  </p>
-                )}
+                <h2 className="text-lg font-medium mb-1">{box.categoryName} #{box.number}: {box.name}</h2>
                 {box.notes && (
                   <p className="text-sm text-gray-600 mb-3">{box.notes}</p>
                 )}
