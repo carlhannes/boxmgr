@@ -15,7 +15,7 @@
     "bcrypt": "^5.1.1",
     "better-sqlite3": "^11.9.1",
     "cookies-next": "^5.1.0",
-    "next": "15.2.4",
+    "next": "^15.3.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-webcam": "^7.2.0",
@@ -31,5 +31,14 @@
     "eslint-config-next": "15.2.4",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "^4.40.0",
+    "@tailwindcss/oxide-linux-arm64-musl": "^4.0.1",
+    "@tailwindcss/oxide-linux-x64-gnu": "^4.0.1",
+    "@tailwindcss/oxide-linux-x64-musl": "^4.0.1",
+    "lightningcss-linux-arm64-musl": "^1.29.1",
+    "lightningcss-linux-x64-gnu": "^1.29.1",
+    "lightningcss-linux-x64-musl": "^1.29.1"
   }
 }

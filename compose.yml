@@ -1,0 +1,13 @@
+services:
+  boxmgr:
+    platform: linux/amd64
+    build:
+      context: . # Build the image from the Dockerfile in the current directory
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000" # Map host port 3000 to container port 3000 (Host:Container)
+    volumes:
+      - ./data:/app/data # Mount the local './data' directory to '/app/data' inside the container
+                         # This ensures the SQLite database persists outside the container.
+    container_name: boxmgr-app # Assign a specific name to the container
+    restart: unless-stopped # Automatically restart the container unless it was manually stopped 

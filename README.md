@@ -186,6 +186,50 @@ When adding new features to the application, follow these steps:
 - **Error Handling**: All API calls should include proper error handling and user feedback.
 - **Comments**: Add comments for complex logic or non-obvious behavior.
 
+## Deployment using Docker
+
+Follow these steps to get the Box Management System running locally using Docker Compose. This is the recommended way to deploy the application.
+
+### Prerequisites
+
+Before you begin, ensure you have the following installed on your system:
+
+1.  **Git:** Required to clone the project repository. You can download it from [git-scm.com](https://git-scm.com/).
+2.  **Docker and Docker Compose:** Required to build and run the application container. Docker Desktop includes Docker Compose and is available for Windows, macOS, and Linux from [docker.com](https://www.docker.com/products/docker-desktop/).
+
+### Steps
+
+1.  **Get the Code:**
+    Open your terminal or command prompt and clone the repository:
+    ```bash
+    git clone https://github.com/carlhannes/boxmgr.git
+    cd boxmgr
+    ```
+    *(Replace `https://github.com/carlhannes/boxmgr.git` with the actual repository URL if different)*
+
+2.  **Build and Start the Application:**
+    While inside the `boxmgr` directory (where the `compose.yml` file is located), run the following command:
+    ```bash
+    docker compose up --build -d
+    ```
+    *   This command tells Docker Compose to:
+        *   `build`: Build the Docker image based on the `Dockerfile` if it doesn't exist or if changes are detected.
+        *   `up`: Create and start the container(s) defined in `compose.yml`.
+        *   `-d`: Run the container in detached mode (in the background), so your terminal is free.
+    *   Docker Compose will automatically handle creating the necessary network and mounting the `./data` volume to store the application's database (`boxmgr.sqlite`).
+
+3.  **Access the Application:**
+    Open your web browser and navigate to:
+    [http://localhost:3000](http://localhost:3000)
+    The first time you access the application with an empty database, you should be redirected to a setup page to create the initial admin user.
+
+4.  **Stopping the Application:**
+    To stop and remove the running container, navigate back to the `boxmgr` directory in your terminal and run:
+    ```bash
+    docker compose down
+    ```
+    Your data in the `./data` directory will remain safe.
+
 ## Roadmap
 
 Below is a list of planned features and their current status:
