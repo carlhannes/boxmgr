@@ -33,7 +33,7 @@ WORKDIR /app
 
 # Set environment variables for production
 ENV NODE_ENV=production
-ENV PORT=3000
+ENV PORT=4540
 # ANTHROPIC_API_KEY and JWT_SECRET are managed internally by the application
 
 # Create non-root user and group
