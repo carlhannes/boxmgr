@@ -7,7 +7,7 @@ services:
     ports:
       - "4540:4540"
     volumes:
-      - ./data:/app/data # Mount the local './data' directory to '/app/data' inside the container
-                         # This ensures the SQLite database persists outside the container.
+      - boxmgr-data:/app/data
     container_name: boxmgr-app # Assign a specific name to the container
     restart: unless-stopped # Automatically restart the container unless it was manually stopped 
+    
